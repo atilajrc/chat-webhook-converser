@@ -5,7 +5,7 @@ import { Upload, FileText, Image, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface FileUploadProps {
-  onFileUpload: (file: File, type: string) => void;
+  onFileUpload: (fileName: string, fileBase64: string, type: string) => void;
   isLoading: boolean;
 }
 
@@ -15,13 +15,32 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, isLoading 
   const audioInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const file = event.target.files?.[0];
     if (file) {
-      console.log(`Arquivo selecionado: ${file.name}, Tipo: ${type}`);
-      onFileUpload(file, type);
-      // Limpar o input para permitir selecionar o mesmo arquivo novamente
-      event.target.value = '';
+      try {
+        console.log(`Arquivo selecionado: ${file.name}, Tipo: ${type}`);
+        const base64 = await convertToBase64(file);
+        onFileUpload(file.name, base64, type);
+        // Limpar o input para permitir selecionar o mesmo arquivo novamente
+        event.target.value = '';
+      } catch (error) {
+        console.error('Erro ao converter arquivo para base64:', error);
+        toast({
+          title: "Erro",
+          description: "Falha ao processar o arquivo",
+          variant: "destructive",
+        });
+      }
     }
   };
 

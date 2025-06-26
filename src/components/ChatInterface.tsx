@@ -36,7 +36,7 @@ export const ChatInterface = () => {
     }
   }, []);
 
-  const sendWebhookRequest = async (content: string, messageType: string) => {
+  const sendWebhookRequest = async (content: string, messageType: string, fileName?: string, fileBase64?: string) => {
     if (!webhookUrl.trim()) {
       toast({
         title: "Erro",
@@ -47,7 +47,7 @@ export const ChatInterface = () => {
     }
 
     setIsLoading(true);
-    console.log("Enviando para webhook N8N:", { content, messageType, requestId: REQUEST_ID });
+    console.log("Enviando para webhook N8N:", { content, messageType, fileName, hasFile: !!fileBase64, requestId: REQUEST_ID });
 
     try {
       const payload = {
@@ -55,6 +55,8 @@ export const ChatInterface = () => {
         content: content,
         messageType: messageType,
         timestamp: new Date().toISOString(),
+        ...(fileName && { fileName }),
+        ...(fileBase64 && { fileBase64 }),
       };
 
       const response = await fetch(webhookUrl, {
@@ -132,9 +134,8 @@ export const ChatInterface = () => {
     }
   };
 
-  const handleFileUpload = async (file: File, type: string) => {
-    const fileName = file.name;
-    await sendWebhookRequest(`Arquivo enviado: ${fileName}`, type);
+  const handleFileUpload = async (fileName: string, fileBase64: string, type: string) => {
+    await sendWebhookRequest(`Arquivo enviado: ${fileName}`, type, fileName, fileBase64);
   };
 
   const handleResendMessage = async (chatMessage: ChatMessage) => {
