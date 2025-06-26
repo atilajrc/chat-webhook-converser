@@ -19,7 +19,12 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, isLoading 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove o prefixo "data:tipo/subtipo;base64," para enviar apenas o conteúdo base64
+        const base64Content = result.split(',')[1];
+        resolve(base64Content);
+      };
       reader.onerror = error => reject(error);
     });
   };
