@@ -23,7 +23,7 @@ interface ChatMessage {
 
 export const ChatInterface = () => {
   const [message, setMessage] = useState('');
-  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('http://100.100.46.98:5678/webhook/bf4dd093-bb02-472c-9454-7ab9af97bd1d');
   const [isLoading, setIsLoading] = useState(false);
   const [currentResponse, setCurrentResponse] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
