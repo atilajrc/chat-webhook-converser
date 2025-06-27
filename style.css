@@ -1,3 +1,4 @@
+
 * {
     margin: 0;
     padding: 0;
@@ -19,20 +20,20 @@ body {
 
 .header {
     background: white;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.5rem;
     border-bottom: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .header h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: bold;
     color: #1f2937;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.125rem;
 }
 
 .header p {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: #6b7280;
 }
 
@@ -48,13 +49,13 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
     min-height: 0;
 }
 
 .webhook-config {
     background: white;
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -62,18 +63,18 @@ body {
 
 .webhook-config label {
     display: block;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 500;
     color: #374151;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.375rem;
 }
 
 .webhook-config input {
     width: 100%;
-    padding: 0.5rem 0.75rem;
+    padding: 0.375rem 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
 }
 
 .webhook-config input:focus {
@@ -83,9 +84,9 @@ body {
 }
 
 .request-id {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #6b7280;
-    margin-top: 0.5rem;
+    margin-top: 0.375rem;
 }
 
 .response-area {
@@ -104,7 +105,7 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid #e5e7eb;
 }
 
@@ -115,13 +116,14 @@ body {
 }
 
 .response-header .icon {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: #3b82f6;
 }
 
 .response-header h3 {
     font-weight: 600;
     color: #1f2937;
+    font-size: 0.9rem;
 }
 
 .response-content {
@@ -147,7 +149,7 @@ body {
 
 .input-area {
     background: white;
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 0.5rem;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -156,16 +158,16 @@ body {
 .file-upload-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
 }
 
 .upload-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.75rem;
+    gap: 0.125rem;
+    padding: 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     background: white;
@@ -184,11 +186,11 @@ body {
 }
 
 .upload-btn .icon {
-    font-size: 1.25rem;
+    font-size: 1rem;
 }
 
 .upload-btn span:last-child {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
 }
 
 .text-input-area {
@@ -199,8 +201,8 @@ body {
 
 #message-input {
     width: 100%;
-    min-height: 80px;
-    padding: 0.75rem;
+    min-height: 60px;
+    padding: 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     resize: none;
@@ -225,7 +227,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     background: #3b82f6;
     color: white;
     border: none;
@@ -233,6 +235,7 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;
+    font-size: 0.875rem;
 }
 
 .primary-btn:hover {
@@ -248,7 +251,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     background: white;
     color: #374151;
     border: 1px solid #d1d5db;
@@ -256,6 +259,7 @@ body {
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    font-size: 0.875rem;
 }
 
 .secondary-btn:hover {
@@ -278,23 +282,24 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .history-header .icon {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     color: #10b981;
 }
 
 .history-header h3 {
     font-weight: 600;
     color: #1f2937;
+    font-size: 0.9rem;
 }
 
 .history-content {
     flex: 1;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow-y: auto;
 }
 
@@ -372,11 +377,11 @@ body {
 }
 
 .message-content {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #374151;
     line-height: 1.2;
     word-break: break-word;
-    max-height: 2.4em;
+    max-height: 2.1em;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -501,7 +506,7 @@ body {
 
 @media (max-width: 640px) {
     .header {
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.75rem;
     }
     
     .main-container {
@@ -522,12 +527,12 @@ body {
     display: flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.375rem 0.5rem;
     background: #dc2626;
     color: white;
     border: none;
     border-radius: 0.375rem;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;

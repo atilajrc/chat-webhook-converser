@@ -1,4 +1,3 @@
-
 class ChatApp {
     constructor() {
         this.REQUEST_ID = "n8n-webhook-chat-001";
@@ -208,94 +207,29 @@ class ChatApp {
             return;
         }
 
-        const formattedContent = this.formatResponse(this.currentResponse);
+        const formattedContent = this.formatResponseAsPlainText(this.currentResponse);
         this.responseContent.innerHTML = `
             <div style="padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; background: #f9fafb;" id="pdf-content">
-                ${this.renderFormattedContent(formattedContent)}
+                <pre style="white-space: pre-wrap; font-size: 0.875rem; color: #374151; word-break: break-words; font-family: inherit;">${formattedContent}</pre>
             </div>
         `;
         this.exportPdfBtn.style.display = 'flex';
     }
 
-    formatResponse(text) {
+    formatResponseAsPlainText(text) {
         if (!text) return '';
         
         try {
             const parsed = JSON.parse(text);
             
             if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].output) {
-                const output = parsed[0].output;
-                return this.formatMarkdownText(output);
+                return parsed[0].output;
             }
             
             return JSON.stringify(parsed, null, 2);
         } catch {
-            return this.formatMarkdownText(text);
+            return text;
         }
-    }
-
-    formatMarkdownText(text) {
-        return text
-            .replace(/^\*\s+/gm, '• ')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\n\n/g, '\n\n')
-            .replace(/(\*\*D:\*\*|\*\*Título:\*\*|\*\*Criado em:\*\*|\*\*Esquema:\*\*)/g, '\n  $1');
-    }
-
-    renderFormattedContent(formattedText) {
-        if (formattedText.includes('• ') && formattedText.includes('Título:')) {
-            return this.renderStructuredContent(formattedText);
-        }
-
-        return `<pre style="white-space: pre-wrap; font-size: 0.875rem; color: #374151; word-break: break-words; font-family: inherit;">${formattedText}</pre>`;
-    }
-
-    renderStructuredContent(formattedText) {
-        const sections = formattedText.split('\n\n');
-        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-
-        sections.forEach(section => {
-            if (section.trim().startsWith('Aqui estão os documentos')) {
-                html += `<div style="margin-bottom: 1rem;"><h3 style="font-weight: 600; color: #1f2937; margin-bottom: 0.75rem;">${section.trim()}</h3></div>`;
-            } else if (section.includes('• ')) {
-                const items = section.split('\n').filter(line => line.trim().startsWith('•'));
-                html += '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
-                
-                items.forEach(item => {
-                    const cleanItem = item.replace('• ', '');
-                    const parts = cleanItem.split(', ');
-                    
-                    html += '<div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6;">';
-                    html += '<div style="display: flex; flex-direction: column; gap: 0.25rem;">';
-                    
-                    parts.forEach(part => {
-                        if (part.includes('D:')) {
-                            const path = part.replace('D:', '').trim();
-                            html += `<div style="font-size: 0.875rem;"><span style="font-weight: 500; color: #1d4ed8;">Arquivo:</span><span style="margin-left: 0.5rem; font-family: monospace; color: #374151;">${path}</span></div>`;
-                        } else if (part.includes('Título:')) {
-                            const title = part.replace('Título:', '').trim();
-                            html += `<div style="font-size: 0.875rem;"><span style="font-weight: 500; color: #059669;">Título:</span><span style="margin-left: 0.5rem; color: #1f2937;">${title}</span></div>`;
-                        } else if (part.includes('Criado em:')) {
-                            const date = part.replace('Criado em:', '').trim();
-                            const formattedDate = new Date(date).toLocaleString('pt-BR');
-                            html += `<div style="font-size: 0.875rem;"><span style="font-weight: 500; color: #7c3aed;">Criado em:</span><span style="margin-left: 0.5rem; color: #6b7280;">${formattedDate}</span></div>`;
-                        } else if (part.includes('Esquema:')) {
-                            const schema = part.replace('Esquema:', '').trim();
-                            html += `<div style="font-size: 0.875rem;"><span style="font-weight: 500; color: #ea580c;">Esquema:</span><span style="margin-left: 0.5rem; color: #6b7280;">${schema}</span></div>`;
-                        }
-                    });
-                    
-                    html += '</div></div>';
-                });
-                
-                html += '</div>';
-            } else {
-                html += `<div style="color: #1f2937; white-space: pre-wrap;">${section}</div>`;
-            }
-        });
-
-        html += '</div>';
-        return html;
     }
 
     updateHistoryDisplay() {
@@ -331,7 +265,7 @@ class ChatApp {
                     </div>
                     
                     <div class="message-content">
-                        ${this.truncateContent(message.content, 120)}
+                        ${this.truncateContent(message.content, 100)}
                     </div>
                     
                     ${message.messageType && isQuestion ? `
@@ -341,6 +275,9 @@ class ChatApp {
                     ` : ''}
                     
                     <div class="message-actions">
+                        <button class="action-btn" onclick="chatApp.handleCopyMessage('${message.id}')">
+                            📋 Copiar
+                        </button>
                         ${isQuestion ? `
                             <button class="action-btn" onclick="chatApp.handleResendMessage('${message.id}')">
                                 🔄 Reenviar
@@ -357,6 +294,19 @@ class ChatApp {
         
         html += '</div>';
         this.historyContent.innerHTML = html;
+    }
+
+    async handleCopyMessage(messageId) {
+        const message = this.chatHistory.find(m => m.id === messageId);
+        if (message) {
+            try {
+                await navigator.clipboard.writeText(message.content);
+                this.showToast('Conteúdo copiado!', 'success');
+            } catch (error) {
+                console.error('Erro ao copiar:', error);
+                this.showToast('Falha ao copiar conteúdo', 'error');
+            }
+        }
     }
 
     handleResendMessage(messageId) {
@@ -394,7 +344,7 @@ class ChatApp {
         });
     }
 
-    truncateContent(content, maxLength = 120) {
+    truncateContent(content, maxLength = 100) {
         if (content.length <= maxLength) return content;
         return content.substring(0, maxLength) + '...';
     }
