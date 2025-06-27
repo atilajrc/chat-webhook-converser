@@ -31,6 +31,10 @@
                     <div class="response-header">
                         <span class="icon">💬</span>
                         <h3>Resposta do Webhook</h3>
+                        <button id="export-pdf-btn" class="pdf-btn" style="display: none;">
+                            <span class="icon">📄</span>
+                            PDF
+                        </button>
                     </div>
                     <div class="response-content" id="response-content">
                         <div class="empty-response">
@@ -99,6 +103,7 @@
     <!-- Toast container -->
     <div id="toast-container"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.3/html2pdf.bundle.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

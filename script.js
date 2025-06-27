@@ -18,6 +18,7 @@ class ChatApp {
         this.clearBtn = document.getElementById('clear-btn');
         this.responseContent = document.getElementById('response-content');
         this.historyContent = document.getElementById('history-content');
+        this.exportPdfBtn = document.getElementById('export-pdf-btn');
         
         // File upload elements
         this.imageBtn = document.getElementById('image-btn');
@@ -42,6 +43,9 @@ class ChatApp {
         this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Imagem'));
         this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Documento'));
         this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Audio'));
+
+        // PDF export event
+        this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
     }
 
     focusMessageInput() {
@@ -97,7 +101,7 @@ class ChatApp {
         });
     }
 
-    async sendWebhookRequest(content, messageType, fileName = null, fileBase64 = null) {
+    async sendWebhookRequest(content, messageType, fileName = null, fileBase64 = null, skipHistory = false) {
         const webhookUrl = this.webhookUrlInput.value.trim();
         
         if (!webhookUrl) {
@@ -136,25 +140,28 @@ class ChatApp {
             if (response.ok) {
                 const responseData = await response.text();
                 
-                // Adicionar pergunta ao histórico
-                const questionMessage = {
-                    id: Date.now().toString(),
-                    type: 'question',
-                    content: content,
-                    messageType: messageType,
-                    timestamp: new Date(),
-                };
+                if (!skipHistory) {
+                    // Adicionar pergunta ao histórico
+                    const questionMessage = {
+                        id: Date.now().toString(),
+                        type: 'question',
+                        content: content,
+                        messageType: messageType,
+                        timestamp: new Date(),
+                    };
 
-                // Adicionar resposta ao histórico
-                const answerMessage = {
-                    id: (Date.now() + 1).toString(),
-                    type: 'answer',
-                    content: responseData,
-                    timestamp: new Date(),
-                    formatted: true,
-                };
+                    // Adicionar resposta ao histórico
+                    const answerMessage = {
+                        id: (Date.now() + 1).toString(),
+                        type: 'answer',
+                        content: responseData,
+                        timestamp: new Date(),
+                        formatted: true,
+                    };
 
-                this.chatHistory.push(questionMessage, answerMessage);
+                    this.chatHistory.push(questionMessage, answerMessage);
+                }
+                
                 this.currentResponse = responseData;
                 
                 this.updateResponseDisplay();
@@ -197,15 +204,17 @@ class ChatApp {
                     <small>A resposta do webhook aparecerá aqui</small>
                 </div>
             `;
+            this.exportPdfBtn.style.display = 'none';
             return;
         }
 
         const formattedContent = this.formatResponse(this.currentResponse);
         this.responseContent.innerHTML = `
-            <div style="padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; background: #f9fafb;">
+            <div style="padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; background: #f9fafb;" id="pdf-content">
                 ${this.renderFormattedContent(formattedContent)}
             </div>
         `;
+        this.exportPdfBtn.style.display = 'flex';
     }
 
     formatResponse(text) {
@@ -228,7 +237,7 @@ class ChatApp {
     formatMarkdownText(text) {
         return text
             .replace(/^\*\s+/gm, '• ')
-            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\n\n/g, '\n\n')
             .replace(/(\*\*D:\*\*|\*\*Título:\*\*|\*\*Criado em:\*\*|\*\*Esquema:\*\*)/g, '\n  $1');
     }
@@ -310,22 +319,20 @@ class ChatApp {
             const avatarColor = isQuestion ? '#3b82f6' : '#10b981';
             
             html += `
-                <div style="padding: 0.75rem; background: ${bgColor}; border: 1px solid ${borderColor}; border-radius: 0.5rem;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <div style="width: 0.75rem; height: 0.75rem; border-radius: 50%; background: ${avatarColor};"></div>
-                            <span style="font-size: 0.75rem; font-weight: 500; color: ${nameColor};">
-                                ${isQuestion ? 'Você' : 'N8N'}
-                            </span>
-                        </div>
-                        <span style="font-size: 0.75rem; color: #6b7280;">
+                <div class="message-item ${message.type}">
+                    <div class="message-header">
+                        <div style="width: 0.5rem; height: 0.5rem; border-radius: 50%; background: ${avatarColor};"></div>
+                        <span style="font-size: 0.6rem; font-weight: 500; color: ${nameColor};">
+                            ${isQuestion ? 'Você' : 'N8N'}
+                        </span>
+                        <span style="font-size: 0.6rem; color: #6b7280; margin-left: auto;">
                             ${this.formatTime(message.timestamp)}
                         </span>
                     </div>
                     
-                    <p style="font-size: 0.875rem; color: #374151; line-height: 1.4; word-break: break-word;">
-                        ${this.truncateContent(message.content, 80)}
-                    </p>
+                    <div class="message-content">
+                        ${this.truncateContent(message.content, 120)}
+                    </div>
                     
                     ${message.messageType && isQuestion ? `
                         <span class="message-type-badge ${message.messageType.toLowerCase()}">
@@ -333,11 +340,17 @@ class ChatApp {
                         </span>
                     ` : ''}
                     
-                    ${isQuestion ? `
-                        <button class="resend-btn" onclick="chatApp.handleResendMessage('${message.id}')">
-                            🔄 Reenviar
-                        </button>
-                    ` : ''}
+                    <div class="message-actions">
+                        ${isQuestion ? `
+                            <button class="action-btn" onclick="chatApp.handleResendMessage('${message.id}')">
+                                🔄 Reenviar
+                            </button>
+                        ` : `
+                            <button class="action-btn" onclick="chatApp.handleViewDetails('${message.id}')">
+                                👁️ Ver Detalhes
+                            </button>
+                        `}
+                    </div>
                 </div>
             `;
         });
@@ -349,8 +362,29 @@ class ChatApp {
     handleResendMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message && message.type === 'question') {
-            this.sendWebhookRequest(message.content, message.messageType || "Texto");
+            this.sendWebhookRequest(message.content, message.messageType || "Texto", null, null, true);
         }
+    }
+
+    handleViewDetails(messageId) {
+        const message = this.chatHistory.find(m => m.id === messageId);
+        if (message && message.type === 'answer') {
+            this.currentResponse = message.content;
+            this.updateResponseDisplay();
+        }
+    }
+
+    exportToPDF() {
+        const element = document.getElementById('pdf-content');
+        const opt = {
+            margin: 1,
+            filename: `webhook-response-${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        
+        html2pdf().set(opt).from(element).save();
     }
 
     formatTime(date) {
@@ -360,7 +394,7 @@ class ChatApp {
         });
     }
 
-    truncateContent(content, maxLength = 80) {
+    truncateContent(content, maxLength = 120) {
         if (content.length <= maxLength) return content;
         return content.substring(0, maxLength) + '...';
     }
