@@ -1,24 +1,104 @@
+
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>chat-webhook-converser</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N8N Webhook Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.462.0/lucide.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <h1>N8N Webhook Chat</h1>
+            <p>Sistema de chat integrado com webhook N8N</p>
+        </header>
+        
+        <div class="main-container">
+            <!-- Área principal do chat -->
+            <div class="chat-area">
+                <!-- Configuração do Webhook -->
+                <div class="webhook-config">
+                    <label for="webhook-url">URL do Webhook N8N:</label>
+                    <input type="url" id="webhook-url" value="http://100.100.46.98:5678/webhook/bf4dd093-bb02-472c-9454-7ab9af97bd1d" 
+                           placeholder="https://your-n8n-instance.com/webhook/your-webhook-id">
+                    <p class="request-id">ID da Requisição (fixo): n8n-webhook-chat-001</p>
+                </div>
 
-    <meta property="og:title" content="chat-webhook-converser" />
-    <meta property="og:description" content="Lovable Generated Project" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+                <!-- Área de resposta -->
+                <div class="response-area">
+                    <div class="response-header">
+                        <span class="icon">💬</span>
+                        <h3>Resposta do Webhook</h3>
+                    </div>
+                    <div class="response-content" id="response-content">
+                        <div class="empty-response">
+                            <p>Nenhuma resposta ainda</p>
+                            <small>A resposta do webhook aparecerá aqui</small>
+                        </div>
+                    </div>
+                </div>
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+                <!-- Área de entrada -->
+                <div class="input-area">
+                    <!-- Upload de arquivos -->
+                    <div class="file-upload-grid">
+                        <button class="upload-btn" id="image-btn">
+                            <span class="icon">🖼️</span>
+                            <span>Imagem</span>
+                        </button>
+                        <input type="file" id="image-input" accept="image/*" style="display: none;">
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+                        <button class="upload-btn" id="document-btn">
+                            <span class="icon">📄</span>
+                            <span>Documento</span>
+                        </button>
+                        <input type="file" id="document-input" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" style="display: none;">
+
+                        <button class="upload-btn" id="audio-btn">
+                            <span class="icon">🎵</span>
+                            <span>Áudio</span>
+                        </button>
+                        <input type="file" id="audio-input" accept="audio/*" style="display: none;">
+                    </div>
+
+                    <!-- Área de texto -->
+                    <div class="text-input-area">
+                        <textarea id="message-input" placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"></textarea>
+                        <div class="button-row">
+                            <button id="send-btn" class="primary-btn">
+                                <span class="icon">📤</span>
+                                Enviar
+                            </button>
+                            <button id="clear-btn" class="secondary-btn">
+                                <span class="icon">🗑️</span>
+                                Limpar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico lateral -->
+            <div class="history-sidebar">
+                <div class="history-header">
+                    <span class="icon">📋</span>
+                    <h3>Histórico</h3>
+                </div>
+                <div class="history-content" id="history-content">
+                    <div class="empty-history">
+                        <p>Nenhuma mensagem no histórico</p>
+                        <small>Suas conversas aparecerão aqui</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <script src="script.js"></script>
+</body>
 </html>
