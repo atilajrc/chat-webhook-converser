@@ -4,7 +4,9 @@ class ChatApp {
         this.chatHistory = [];
         this.isLoading = false;
         this.currentResponse = '';
-        this.historyVisible = true;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.recordedAudioBlob = null;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -21,9 +23,7 @@ class ChatApp {
         this.exportPdfBtn = document.getElementById('export-pdf-btn');
         this.copyResponseBtn = document.getElementById('copy-response-btn');
         this.clearResponseBtn = document.getElementById('clear-response-btn');
-        this.toggleHistoryBtn = document.getElementById('toggle-history-btn');
         this.clearHistoryBtn = document.getElementById('clear-history-btn');
-        this.historySidebar = document.querySelector('.history-sidebar');
         
         // File upload elements
         this.imageBtn = document.getElementById('image-btn');
@@ -32,6 +32,17 @@ class ChatApp {
         this.documentInput = document.getElementById('document-input');
         this.audioBtn = document.getElementById('audio-btn');
         this.audioInput = document.getElementById('audio-input');
+        
+        // Recording elements
+        this.recordBtn = document.getElementById('record-btn');
+        this.recordingModal = document.getElementById('recording-modal');
+        this.closeModalBtn = document.getElementById('close-modal-btn');
+        this.startRecordingBtn = document.getElementById('start-recording-btn');
+        this.stopRecordingBtn = document.getElementById('stop-recording-btn');
+        this.playRecordingBtn = document.getElementById('play-recording-btn');
+        this.sendRecordingBtn = document.getElementById('send-recording-btn');
+        this.recordingStatus = document.getElementById('recording-status');
+        this.audioPlayback = document.getElementById('audio-playback');
     }
 
     attachEventListeners() {
@@ -45,20 +56,32 @@ class ChatApp {
         this.documentBtn.addEventListener('click', () => this.documentInput.click());
         this.audioBtn.addEventListener('click', () => this.audioInput.click());
 
-        this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Imagem'));
-        this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Documento'));
-        this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Audio'));
+        this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'imageMessage'));
+        this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'documentMessage'));
+        this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'audioMessage'));
 
-        // PDF export event
+        // Recording events
+        this.recordBtn.addEventListener('click', () => this.openRecordingModal());
+        this.closeModalBtn.addEventListener('click', () => this.closeRecordingModal());
+        this.startRecordingBtn.addEventListener('click', () => this.startRecording());
+        this.stopRecordingBtn.addEventListener('click', () => this.stopRecording());
+        this.playRecordingBtn.addEventListener('click', () => this.playRecording());
+        this.sendRecordingBtn.addEventListener('click', () => this.sendRecording());
+
+        // Response action events
         this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
-
-        // New response action events
         this.copyResponseBtn.addEventListener('click', () => this.copyResponse());
         this.clearResponseBtn.addEventListener('click', () => this.clearResponse());
 
         // History action events
-        this.toggleHistoryBtn.addEventListener('click', () => this.toggleHistory());
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
+
+        // Modal close on background click
+        this.recordingModal.addEventListener('click', (e) => {
+            if (e.target === this.recordingModal) {
+                this.closeRecordingModal();
+            }
+        });
     }
 
     focusMessageInput() {
@@ -69,7 +92,7 @@ class ChatApp {
         const message = this.messageInput.value.trim();
         if (!message) return;
 
-        await this.sendWebhookRequest(message, "Texto");
+        await this.sendWebhookRequest(message, "conversation");
         this.messageInput.value = '';
         this.focusMessageInput();
     }
@@ -86,19 +109,122 @@ class ChatApp {
         }
     }
 
-    async handleFileSelect(event, type) {
+    async handleFileSelect(event, messageType) {
         const file = event.target.files?.[0];
         if (file) {
             try {
-                console.log(`Arquivo selecionado: ${file.name}, Tipo: ${type}`);
+                console.log(`Arquivo selecionado: ${file.name}, Tipo: ${messageType}`);
                 const base64 = await this.convertToBase64(file);
-                await this.sendWebhookRequest(`Arquivo enviado: ${file.name}`, type, file.name, base64);
+                await this.sendWebhookRequest(`Arquivo enviado: ${file.name}`, messageType, file.name, base64);
                 event.target.value = '';
             } catch (error) {
                 console.error('Erro ao converter arquivo para base64:', error);
                 this.showToast('Falha ao processar o arquivo', 'error');
             }
         }
+    }
+
+    // Recording methods
+    openRecordingModal() {
+        this.recordingModal.style.display = 'flex';
+        this.resetRecordingModal();
+    }
+
+    closeRecordingModal() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.stop();
+        }
+        this.recordingModal.style.display = 'none';
+        this.resetRecordingModal();
+    }
+
+    resetRecordingModal() {
+        this.startRecordingBtn.style.display = 'flex';
+        this.stopRecordingBtn.style.display = 'none';
+        this.playRecordingBtn.style.display = 'none';
+        this.sendRecordingBtn.style.display = 'none';
+        this.audioPlayback.style.display = 'none';
+        this.recordingStatus.innerHTML = '<p>Clique em "Iniciar Gravação" para começar</p>';
+        this.recordedAudioBlob = null;
+        this.audioChunks = [];
+    }
+
+    async startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            
+            this.mediaRecorder.ondataavailable = (event) => {
+                this.audioChunks.push(event.data);
+            };
+
+            this.mediaRecorder.onstop = () => {
+                this.recordedAudioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(this.recordedAudioBlob);
+                this.audioPlayback.src = audioUrl;
+                this.audioPlayback.style.display = 'block';
+                this.playRecordingBtn.style.display = 'flex';
+                this.sendRecordingBtn.style.display = 'flex';
+                this.recordingStatus.innerHTML = '<p>Gravação concluída! Você pode reproduzir ou enviar o áudio.</p>';
+                
+                // Stop all tracks to release the microphone
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            this.mediaRecorder.start();
+            this.startRecordingBtn.style.display = 'none';
+            this.stopRecordingBtn.style.display = 'flex';
+            this.stopRecordingBtn.classList.add('recording');
+            this.recordingStatus.innerHTML = '<p>🔴 Gravando... Clique em "Parar Gravação" quando terminar.</p>';
+            
+            this.audioChunks = [];
+        } catch (error) {
+            console.error('Erro ao acessar o microfone:', error);
+            this.showToast('Erro ao acessar o microfone. Verifique as permissões.', 'error');
+        }
+    }
+
+    stopRecording() {
+        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+            this.mediaRecorder.stop();
+            this.stopRecordingBtn.style.display = 'none';
+            this.stopRecordingBtn.classList.remove('recording');
+            this.startRecordingBtn.style.display = 'flex';
+        }
+    }
+
+    playRecording() {
+        if (this.audioPlayback.src) {
+            this.audioPlayback.play();
+        }
+    }
+
+    async sendRecording() {
+        if (!this.recordedAudioBlob) return;
+
+        try {
+            const base64 = await this.convertBlobToBase64(this.recordedAudioBlob);
+            const fileName = `audio_${new Date().getTime()}.wav`;
+            await this.sendWebhookRequest(`Áudio gravado: ${fileName}`, 'audioMessage', fileName, base64);
+            this.closeRecordingModal();
+            this.showToast('Áudio enviado com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao enviar áudio:', error);
+            this.showToast('Falha ao enviar o áudio', 'error');
+        }
+    }
+
+    convertBlobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onload = () => {
+                const result = reader.result;
+                const base64Content = result.split(',')[1];
+                resolve(base64Content);
+            };
+            reader.onerror = error => reject(error);
+        });
     }
 
     convertToBase64(file) {
@@ -172,7 +298,7 @@ class ChatApp {
                         formatted: true,
                     };
 
-                    this.chatHistory.push(questionMessage, answerMessage);
+                    this.chatHistory.unshift(answerMessage, questionMessage); // Mais recente primeiro
                 }
                 
                 this.currentResponse = responseData;
@@ -201,6 +327,7 @@ class ChatApp {
         this.imageBtn.disabled = loading;
         this.documentBtn.disabled = loading;
         this.audioBtn.disabled = loading;
+        this.recordBtn.disabled = loading;
         this.messageInput.disabled = loading;
         
         // Update button text
@@ -287,8 +414,8 @@ class ChatApp {
                     </div>
                     
                     ${message.messageType && isQuestion ? `
-                        <span class="message-type-badge ${message.messageType.toLowerCase()}">
-                            ${message.messageType}
+                        <span class="message-type-badge ${this.getMessageTypeBadgeClass(message.messageType)}">
+                            ${this.getMessageTypeLabel(message.messageType)}
                         </span>
                     ` : ''}
                     
@@ -314,7 +441,27 @@ class ChatApp {
         this.historyContent.innerHTML = html;
     }
 
-    async handleCopyMessage(messageId) {
+    getMessageTypeLabel(messageType) {
+        const labels = {
+            'conversation': 'Texto',
+            'imageMessage': 'Imagem',
+            'audioMessage': 'Áudio',
+            'documentMessage': 'Documento'
+        };
+        return labels[messageType] || messageType;
+    }
+
+    getMessageTypeBadgeClass(messageType) {
+        const classes = {
+            'conversation': 'texto',
+            'imageMessage': 'imagem',
+            'audioMessage': 'audio',
+            'documentMessage': 'documento'
+        };
+        return classes[messageType] || 'texto';
+    }
+
+    handleCopyMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message) {
             try {
@@ -399,18 +546,6 @@ class ChatApp {
         this.currentResponse = '';
         this.updateResponseDisplay();
         this.showToast('Resposta limpa!', 'success');
-    }
-
-    toggleHistory() {
-        this.historyVisible = !this.historyVisible;
-        
-        if (this.historyVisible) {
-            this.historySidebar.style.display = 'flex';
-            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Ocultar';
-        } else {
-            this.historySidebar.style.display = 'none';
-            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Mostrar';
-        }
     }
 
     clearHistory() {
