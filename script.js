@@ -6,6 +6,11 @@ class ChatApp {
         this.currentResponse = '';
         this.historyVisible = true;
         
+        // Audio recording properties
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.isRecording = false;
+        
         this.initializeElements();
         this.attachEventListeners();
         this.focusMessageInput();
@@ -43,11 +48,11 @@ class ChatApp {
         // File upload events
         this.imageBtn.addEventListener('click', () => this.imageInput.click());
         this.documentBtn.addEventListener('click', () => this.documentInput.click());
-        this.audioBtn.addEventListener('click', () => this.audioInput.click());
+        this.audioBtn.addEventListener('click', () => this.handleAudioButtonClick());
 
-        this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Imagem'));
-        this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Documento'));
-        this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Audio'));
+        this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'imageMessage'));
+        this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'documentMessage'));
+        this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'audioMessage'));
 
         // PDF export event
         this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
@@ -69,7 +74,7 @@ class ChatApp {
         const message = this.messageInput.value.trim();
         if (!message) return;
 
-        await this.sendWebhookRequest(message, "Texto");
+        await this.sendWebhookRequest(message, "conversation");
         this.messageInput.value = '';
         this.focusMessageInput();
     }
@@ -84,6 +89,88 @@ class ChatApp {
             e.preventDefault();
             this.handleSendText();
         }
+    }
+
+    async handleAudioButtonClick() {
+        if (this.isRecording) {
+            this.stopRecording();
+        } else {
+            await this.startRecording();
+        }
+    }
+
+    async startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                this.processRecordedAudio(audioBlob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            this.updateAudioButtonState();
+            this.showToast('Gravação iniciada...', 'success');
+
+        } catch (error) {
+            console.error('Erro ao acessar microfone:', error);
+            this.showToast('Erro ao acessar o microfone', 'error');
+        }
+    }
+
+    stopRecording() {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            this.updateAudioButtonState();
+            this.showToast('Gravação finalizada', 'success');
+        }
+    }
+
+    updateAudioButtonState() {
+        if (this.isRecording) {
+            this.audioBtn.innerHTML = '<span class="icon">⏹️</span><span>Parar</span>';
+            this.audioBtn.style.background = '#ef4444';
+            this.audioBtn.style.color = 'white';
+        } else {
+            this.audioBtn.innerHTML = '<span class="icon">🎵</span><span>Áudio</span>';
+            this.audioBtn.style.background = '';
+            this.audioBtn.style.color = '';
+        }
+    }
+
+    async processRecordedAudio(audioBlob) {
+        try {
+            const base64 = await this.convertBlobToBase64(audioBlob);
+            const fileName = `audio_${new Date().getTime()}.webm`;
+            await this.sendWebhookRequest(`Áudio gravado: ${fileName}`, "audioMessage", fileName, base64);
+        } catch (error) {
+            console.error('Erro ao processar áudio gravado:', error);
+            this.showToast('Erro ao processar áudio gravado', 'error');
+        }
+    }
+
+    convertBlobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = reader.result;
+                const base64Content = result.split(',')[1];
+                resolve(base64Content);
+            };
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(blob);
+        });
     }
 
     async handleFileSelect(event, type) {
@@ -200,7 +287,7 @@ class ChatApp {
         this.clearBtn.disabled = loading;
         this.imageBtn.disabled = loading;
         this.documentBtn.disabled = loading;
-        this.audioBtn.disabled = loading;
+        this.audioBtn.disabled = loading && !this.isRecording;
         this.messageInput.disabled = loading;
         
         // Update button text
@@ -261,9 +348,12 @@ class ChatApp {
             return;
         }
 
+        // Sort history by timestamp, most recent first
+        const sortedHistory = [...this.chatHistory].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
         let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
         
-        this.chatHistory.forEach(message => {
+        sortedHistory.forEach(message => {
             const isQuestion = message.type === 'question';
             const bgColor = isQuestion ? '#eff6ff' : '#f0fdf4';
             const borderColor = isQuestion ? '#bfdbfe' : '#bbf7d0';
@@ -287,8 +377,8 @@ class ChatApp {
                     </div>
                     
                     ${message.messageType && isQuestion ? `
-                        <span class="message-type-badge ${message.messageType.toLowerCase()}">
-                            ${message.messageType}
+                        <span class="message-type-badge ${this.getMessageTypeBadgeClass(message.messageType)}">
+                            ${this.getMessageTypeLabel(message.messageType)}
                         </span>
                     ` : ''}
                     
@@ -314,6 +404,26 @@ class ChatApp {
         this.historyContent.innerHTML = html;
     }
 
+    getMessageTypeBadgeClass(messageType) {
+        switch(messageType) {
+            case 'conversation': return 'texto';
+            case 'imageMessage': return 'imagem';
+            case 'audioMessage': return 'audio';
+            case 'documentMessage': return 'documento';
+            default: return 'texto';
+        }
+    }
+
+    getMessageTypeLabel(messageType) {
+        switch(messageType) {
+            case 'conversation': return 'Texto';
+            case 'imageMessage': return 'Imagem';
+            case 'audioMessage': return 'Áudio';
+            case 'documentMessage': return 'Documento';
+            default: return 'Texto';
+        }
+    }
+
     async handleCopyMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message) {
@@ -330,7 +440,7 @@ class ChatApp {
     handleResendMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message && message.type === 'question') {
-            this.sendWebhookRequest(message.content, message.messageType || "Texto", null, null, true);
+            this.sendWebhookRequest(message.content, message.messageType || "conversation", null, null, true);
         }
     }
 
