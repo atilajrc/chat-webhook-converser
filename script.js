@@ -5,9 +5,6 @@ class ChatApp {
         this.isLoading = false;
         this.currentResponse = '';
         this.historyVisible = true;
-        this.mediaRecorder = null;
-        this.audioChunks = [];
-        this.isRecording = false;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -35,8 +32,6 @@ class ChatApp {
         this.documentInput = document.getElementById('document-input');
         this.audioBtn = document.getElementById('audio-btn');
         this.audioInput = document.getElementById('audio-input');
-        this.recordBtn = document.getElementById('record-btn');
-        this.stopRecordBtn = document.getElementById('stop-record-btn');
     }
 
     attachEventListeners() {
@@ -48,164 +43,22 @@ class ChatApp {
         // File upload events
         this.imageBtn.addEventListener('click', () => this.imageInput.click());
         this.documentBtn.addEventListener('click', () => this.documentInput.click());
-        this.audioBtn.addEventListener('click', () => this.showAudioOptions());
+        this.audioBtn.addEventListener('click', () => this.audioInput.click());
 
-        this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'imageMessage'));
-        this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'documentMessage'));
-        this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'audioMessage'));
+        this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Imagem'));
+        this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Documento'));
+        this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'Audio'));
 
         // PDF export event
         this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
 
-        // Response action events
+        // New response action events
         this.copyResponseBtn.addEventListener('click', () => this.copyResponse());
         this.clearResponseBtn.addEventListener('click', () => this.clearResponse());
 
         // History action events
-        document.getElementById('history-toggle').addEventListener('change', (e) => this.toggleHistory(e.target.checked));
+        this.toggleHistoryBtn.addEventListener('click', () => this.toggleHistory());
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-    }
-
-    showAudioOptions() {
-        const audioMenu = document.createElement('div');
-        audioMenu.className = 'audio-menu';
-        audioMenu.innerHTML = `
-            <div class="audio-menu-content">
-                <button id="record-option" class="audio-option-btn">
-                    <span class="icon">🎤</span>
-                    Gravar Áudio
-                </button>
-                <button id="upload-option" class="audio-option-btn">
-                    <span class="icon">📁</span>
-                    Enviar Arquivo
-                </button>
-                <button id="close-audio-menu" class="audio-option-btn close">
-                    <span class="icon">❌</span>
-                    Fechar
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(audioMenu);
-
-        document.getElementById('record-option').addEventListener('click', () => {
-            this.showAudioRecorder();
-            audioMenu.remove();
-        });
-
-        document.getElementById('upload-option').addEventListener('click', () => {
-            this.audioInput.click();
-            audioMenu.remove();
-        });
-
-        document.getElementById('close-audio-menu').addEventListener('click', () => {
-            audioMenu.remove();
-        });
-    }
-
-    showAudioRecorder() {
-        const recorderModal = document.createElement('div');
-        recorderModal.className = 'recorder-modal';
-        recorderModal.innerHTML = `
-            <div class="recorder-content">
-                <h3>Gravação de Áudio</h3>
-                <div class="recorder-controls">
-                    <button id="start-record" class="record-btn">
-                        <span class="icon">🎤</span>
-                        Iniciar Gravação
-                    </button>
-                    <button id="stop-record" class="record-btn" style="display: none;">
-                        <span class="icon">⏹️</span>
-                        Parar Gravação
-                    </button>
-                    <button id="send-record" class="record-btn" style="display: none;">
-                        <span class="icon">📤</span>
-                        Enviar Áudio
-                    </button>
-                </div>
-                <div class="recording-status" id="recording-status"></div>
-                <button id="close-recorder" class="close-recorder">Fechar</button>
-            </div>
-        `;
-
-        document.body.appendChild(recorderModal);
-
-        const startBtn = document.getElementById('start-record');
-        const stopBtn = document.getElementById('stop-record');
-        const sendBtn = document.getElementById('send-record');
-        const statusDiv = document.getElementById('recording-status');
-        const closeBtn = document.getElementById('close-recorder');
-
-        startBtn.addEventListener('click', () => this.startRecording(startBtn, stopBtn, sendBtn, statusDiv));
-        stopBtn.addEventListener('click', () => this.stopRecording(startBtn, stopBtn, sendBtn, statusDiv));
-        sendBtn.addEventListener('click', () => this.sendRecordedAudio(recorderModal));
-        closeBtn.addEventListener('click', () => recorderModal.remove());
-    }
-
-    async startRecording(startBtn, stopBtn, sendBtn, statusDiv) {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
-            this.audioChunks = [];
-
-            this.mediaRecorder.ondataavailable = (event) => {
-                this.audioChunks.push(event.data);
-            };
-
-            this.mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-                this.recordedAudio = audioBlob;
-                sendBtn.style.display = 'inline-block';
-                statusDiv.textContent = 'Gravação concluída. Clique em "Enviar Áudio" para enviar.';
-            };
-
-            this.mediaRecorder.start();
-            this.isRecording = true;
-
-            startBtn.style.display = 'none';
-            stopBtn.style.display = 'inline-block';
-            statusDiv.textContent = 'Gravando... Clique em "Parar Gravação" quando terminar.';
-        } catch (error) {
-            console.error('Erro ao iniciar gravação:', error);
-            statusDiv.textContent = 'Erro ao acessar o microfone. Verifique as permissões.';
-        }
-    }
-
-    stopRecording(startBtn, stopBtn, sendBtn, statusDiv) {
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.stop();
-            this.isRecording = false;
-            
-            stopBtn.style.display = 'none';
-            statusDiv.textContent = 'Processando gravação...';
-        }
-    }
-
-    async sendRecordedAudio(modal) {
-        if (this.recordedAudio) {
-            try {
-                const base64 = await this.convertBlobToBase64(this.recordedAudio);
-                const fileName = `audio_${Date.now()}.wav`;
-                await this.sendWebhookRequest(`Áudio gravado: ${fileName}`, 'audioMessage', fileName, base64);
-                modal.remove();
-            } catch (error) {
-                console.error('Erro ao enviar áudio gravado:', error);
-                this.showToast('Falha ao enviar áudio gravado', 'error');
-            }
-        }
-    }
-
-    convertBlobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onload = () => {
-                const result = reader.result;
-                const base64Content = result.split(',')[1];
-                resolve(base64Content);
-            };
-            reader.onerror = error => reject(error);
-        });
     }
 
     focusMessageInput() {
@@ -216,7 +69,7 @@ class ChatApp {
         const message = this.messageInput.value.trim();
         if (!message) return;
 
-        await this.sendWebhookRequest(message, "conversation");
+        await this.sendWebhookRequest(message, "Texto");
         this.messageInput.value = '';
         this.focusMessageInput();
     }
@@ -319,8 +172,7 @@ class ChatApp {
                         formatted: true,
                     };
 
-                    // Adicionar no início para manter ordem mais atual primeiro
-                    this.chatHistory.unshift(answerMessage, questionMessage);
+                    this.chatHistory.push(questionMessage, answerMessage);
                 }
                 
                 this.currentResponse = responseData;
@@ -436,7 +288,7 @@ class ChatApp {
                     
                     ${message.messageType && isQuestion ? `
                         <span class="message-type-badge ${message.messageType.toLowerCase()}">
-                            ${this.getMessageTypeDisplay(message.messageType)}
+                            ${message.messageType}
                         </span>
                     ` : ''}
                     
@@ -462,16 +314,6 @@ class ChatApp {
         this.historyContent.innerHTML = html;
     }
 
-    getMessageTypeDisplay(messageType) {
-        const typeMap = {
-            'conversation': 'Texto',
-            'imageMessage': 'Imagem',
-            'audioMessage': 'Áudio',
-            'documentMessage': 'Documento'
-        };
-        return typeMap[messageType] || messageType;
-    }
-
     async handleCopyMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message) {
@@ -488,7 +330,7 @@ class ChatApp {
     handleResendMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message && message.type === 'question') {
-            this.sendWebhookRequest(message.content, message.messageType || "conversation", null, null, true);
+            this.sendWebhookRequest(message.content, message.messageType || "Texto", null, null, true);
         }
     }
 
@@ -559,12 +401,15 @@ class ChatApp {
         this.showToast('Resposta limpa!', 'success');
     }
 
-    toggleHistory(show) {
-        const historySidebar = document.getElementById('history-sidebar');
-        if (show) {
-            historySidebar.classList.remove('hidden');
+    toggleHistory() {
+        this.historyVisible = !this.historyVisible;
+        
+        if (this.historyVisible) {
+            this.historySidebar.style.display = 'flex';
+            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Ocultar';
         } else {
-            historySidebar.classList.add('hidden');
+            this.historySidebar.style.display = 'none';
+            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Mostrar';
         }
     }
 
