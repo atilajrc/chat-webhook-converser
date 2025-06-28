@@ -4,7 +4,6 @@ class ChatApp {
         this.chatHistory = [];
         this.isLoading = false;
         this.currentResponse = '';
-        this.historyVisible = true;
         
         this.initializeElements();
         this.attachEventListeners();
@@ -19,11 +18,6 @@ class ChatApp {
         this.responseContent = document.getElementById('response-content');
         this.historyContent = document.getElementById('history-content');
         this.exportPdfBtn = document.getElementById('export-pdf-btn');
-        this.copyResponseBtn = document.getElementById('copy-response-btn');
-        this.clearResponseBtn = document.getElementById('clear-response-btn');
-        this.toggleHistoryBtn = document.getElementById('toggle-history-btn');
-        this.clearHistoryBtn = document.getElementById('clear-history-btn');
-        this.historySidebar = document.querySelector('.history-sidebar');
         
         // File upload elements
         this.imageBtn = document.getElementById('image-btn');
@@ -51,14 +45,6 @@ class ChatApp {
 
         // PDF export event
         this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
-
-        // New response action events
-        this.copyResponseBtn.addEventListener('click', () => this.copyResponse());
-        this.clearResponseBtn.addEventListener('click', () => this.clearResponse());
-
-        // History action events
-        this.toggleHistoryBtn.addEventListener('click', () => this.toggleHistory());
-        this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
     }
 
     focusMessageInput() {
@@ -218,8 +204,6 @@ class ChatApp {
                 </div>
             `;
             this.exportPdfBtn.style.display = 'none';
-            this.copyResponseBtn.style.display = 'none';
-            this.clearResponseBtn.style.display = 'none';
             return;
         }
 
@@ -230,8 +214,6 @@ class ChatApp {
             </div>
         `;
         this.exportPdfBtn.style.display = 'flex';
-        this.copyResponseBtn.style.display = 'flex';
-        this.clearResponseBtn.style.display = 'flex';
     }
 
     formatResponseAsPlainText(text) {
@@ -377,46 +359,6 @@ class ChatApp {
         setTimeout(() => {
             toast.remove();
         }, 3000);
-    }
-
-    copyResponse() {
-        if (!this.currentResponse) {
-            this.showToast('Nenhuma resposta para copiar', 'error');
-            return;
-        }
-
-        const formattedContent = this.formatResponseAsPlainText(this.currentResponse);
-        
-        navigator.clipboard.writeText(formattedContent).then(() => {
-            this.showToast('Resposta copiada!', 'success');
-        }).catch((error) => {
-            console.error('Erro ao copiar resposta:', error);
-            this.showToast('Falha ao copiar resposta', 'error');
-        });
-    }
-
-    clearResponse() {
-        this.currentResponse = '';
-        this.updateResponseDisplay();
-        this.showToast('Resposta limpa!', 'success');
-    }
-
-    toggleHistory() {
-        this.historyVisible = !this.historyVisible;
-        
-        if (this.historyVisible) {
-            this.historySidebar.style.display = 'flex';
-            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Ocultar';
-        } else {
-            this.historySidebar.style.display = 'none';
-            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Mostrar';
-        }
-    }
-
-    clearHistory() {
-        this.chatHistory = [];
-        this.updateHistoryDisplay();
-        this.showToast('Histórico limpo!', 'success');
     }
 }
 

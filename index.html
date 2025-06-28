@@ -21,7 +21,7 @@
                 <!-- Configuração do Webhook -->
                 <div class="webhook-config">
                     <label for="webhook-url">URL do Webhook N8N:</label>
-                    <input type="url" id="webhook-url" value="http://100.100.46.98:5678/webhook/4a826df4-1f5a-4c29-97eb-0879c751c681" 
+                    <input type="url" id="webhook-url" value="http://100.100.46.98:5678/webhook/bf4dd093-bb02-472c-9454-7ab9af97bd1d" 
                            placeholder="https://your-n8n-instance.com/webhook/your-webhook-id">
                     <p class="request-id">ID da Requisição (fixo): n8n-webhook-chat-001</p>
                 </div>
@@ -29,24 +29,12 @@
                 <!-- Área de resposta -->
                 <div class="response-area">
                     <div class="response-header">
-                        <div class="response-header-left">
-                            <span class="icon">💬</span>
-                            <h3>Resposta do Webhook</h3>
-                        </div>
-                        <div class="response-buttons">
-                            <button id="copy-response-btn" class="action-btn" style="display: none;">
-                                <span class="icon">📋</span>
-                                Copiar
-                            </button>
-                            <button id="clear-response-btn" class="action-btn" style="display: none;">
-                                <span class="icon">🗑️</span>
-                                Limpar
-                            </button>
-                            <button id="export-pdf-btn" class="pdf-btn" style="display: none;">
-                                <span class="icon">📄</span>
-                                PDF
-                            </button>
-                        </div>
+                        <span class="icon">💬</span>
+                        <h3>Resposta do Webhook</h3>
+                        <button id="export-pdf-btn" class="pdf-btn" style="display: none;">
+                            <span class="icon">📄</span>
+                            PDF
+                        </button>
                     </div>
                     <div class="response-content" id="response-content">
                         <div class="empty-response">
@@ -101,16 +89,6 @@
                 <div class="history-header">
                     <span class="icon">📋</span>
                     <h3>Histórico</h3>
-                    <div class="history-controls">
-                        <button id="toggle-history-btn" class="history-control-btn">
-                            <span class="icon">👁️</span>
-                            Ocultar
-                        </button>
-                        <button id="clear-history-btn" class="history-control-btn">
-                            <span class="icon">🗑️</span>
-                            Limpar
-                        </button>
-                    </div>
                 </div>
                 <div class="history-content" id="history-content">
                     <div class="empty-history">
