@@ -1,4 +1,3 @@
-
 class ChatApp {
     constructor() {
         this.REQUEST_ID = "n8n-webhook-chat-001";
@@ -55,10 +54,6 @@ class ChatApp {
         this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'documentMessage'));
         this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'audioMessage'));
 
-        // Audio recording events
-        this.recordBtn.addEventListener('click', () => this.startRecording());
-        this.stopRecordBtn.addEventListener('click', () => this.stopRecording());
-
         // PDF export event
         this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
 
@@ -67,7 +62,7 @@ class ChatApp {
         this.clearResponseBtn.addEventListener('click', () => this.clearResponse());
 
         // History action events
-        this.toggleHistoryBtn.addEventListener('click', () => this.toggleHistory());
+        document.getElementById('history-toggle').addEventListener('change', (e) => this.toggleHistory(e.target.checked));
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
     }
 
@@ -564,15 +559,12 @@ class ChatApp {
         this.showToast('Resposta limpa!', 'success');
     }
 
-    toggleHistory() {
-        this.historyVisible = !this.historyVisible;
-        
-        if (this.historyVisible) {
-            this.historySidebar.style.display = 'flex';
-            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Ocultar';
+    toggleHistory(show) {
+        const historySidebar = document.getElementById('history-sidebar');
+        if (show) {
+            historySidebar.classList.remove('hidden');
         } else {
-            this.historySidebar.style.display = 'none';
-            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Mostrar';
+            historySidebar.classList.add('hidden');
         }
     }
 

@@ -58,25 +58,30 @@
 
                 <!-- Área de entrada -->
                 <div class="input-area">
-                    <!-- Área de texto com botões de upload ao lado -->
+                    <!-- Botões de upload acima do textarea -->
+                    <div class="upload-buttons-row">
+                        <button class="upload-btn-inline" id="image-btn" title="Enviar Imagem">
+                            <span class="icon">🖼️</span>
+                            <span class="upload-label">Imagem</span>
+                        </button>
+                        <input type="file" id="image-input" accept="image/*" style="display: none;">
+
+                        <button class="upload-btn-inline" id="document-btn" title="Enviar Documento">
+                            <span class="icon">📄</span>
+                            <span class="upload-label">Documento</span>
+                        </button>
+                        <input type="file" id="document-input" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" style="display: none;">
+
+                        <button class="upload-btn-inline" id="audio-btn" title="Áudio">
+                            <span class="icon">🎵</span>
+                            <span class="upload-label">Áudio</span>
+                        </button>
+                        <input type="file" id="audio-input" accept="audio/*" style="display: none;">
+                    </div>
+
+                    <!-- Área de texto -->
                     <div class="text-input-container">
                         <textarea id="message-input" placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"></textarea>
-                        <div class="upload-buttons-inline">
-                            <button class="upload-btn-inline" id="image-btn" title="Enviar Imagem">
-                                <span class="icon">🖼️</span>
-                            </button>
-                            <input type="file" id="image-input" accept="image/*" style="display: none;">
-
-                            <button class="upload-btn-inline" id="document-btn" title="Enviar Documento">
-                                <span class="icon">📄</span>
-                            </button>
-                            <input type="file" id="document-input" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" style="display: none;">
-
-                            <button class="upload-btn-inline" id="audio-btn" title="Áudio">
-                                <span class="icon">🎵</span>
-                            </button>
-                            <input type="file" id="audio-input" accept="audio/*" style="display: none;">
-                        </div>
                     </div>
 
                     <div class="button-row">
@@ -92,22 +97,17 @@
                 </div>
             </div>
 
+            <!-- Controle do histórico no canto superior direito -->
+            <div class="history-control">
+                <label class="history-checkbox">
+                    <input type="checkbox" id="history-toggle" checked>
+                    <span>Histórico</span>
+                    <button id="clear-history-btn" class="clear-history-btn" title="Limpar histórico">🗑️</button>
+                </label>
+            </div>
+
             <!-- Histórico lateral -->
-            <div class="history-sidebar">
-                <div class="history-header">
-                    <span class="icon">📋</span>
-                    <h3>Histórico</h3>
-                    <div class="history-controls">
-                        <button id="toggle-history-btn" class="history-control-btn">
-                            <span class="icon">👁️</span>
-                            Ocultar
-                        </button>
-                        <button id="clear-history-btn" class="history-control-btn">
-                            <span class="icon">🗑️</span>
-                            Limpar
-                        </button>
-                    </div>
-                </div>
+            <div class="history-sidebar" id="history-sidebar">
                 <div class="history-content" id="history-content">
                     <div class="empty-history">
                         <p>Nenhuma mensagem no histórico</p>
