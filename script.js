@@ -13,7 +13,6 @@ class ChatApp {
         this.initializeElements();
         this.attachEventListeners();
         this.focusMessageInput();
-        this.loadHistoryFromRedis();
     }
 
     initializeElements() {
@@ -70,77 +69,6 @@ class ChatApp {
         // History action events
         this.toggleHistoryBtn.addEventListener('click', () => this.toggleHistory());
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
-    }
-
-    async loadHistoryFromRedis() {
-        try {
-            const response = await fetch('http://100.100.46.98:6379', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: 'GET',
-                    key: this.REQUEST_ID,
-                    db: 1
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.value) {
-                    this.chatHistory = JSON.parse(data.value).reverse(); // Mais atual para menos atual
-                    this.updateHistoryDisplay();
-                }
-            }
-        } catch (error) {
-            console.error('Erro ao carregar histórico do Redis:', error);
-        }
-    }
-
-    async saveHistoryToRedis() {
-        try {
-            const response = await fetch('http://100.100.46.98:6379', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: 'SET',
-                    key: this.REQUEST_ID,
-                    value: JSON.stringify(this.chatHistory.slice().reverse()), // Salvar na ordem original
-                    db: 1
-                })
-            });
-
-            if (!response.ok) {
-                console.error('Erro ao salvar histórico no Redis');
-            }
-        } catch (error) {
-            console.error('Erro ao salvar histórico no Redis:', error);
-        }
-    }
-
-    async clearHistoryFromRedis() {
-        try {
-            const response = await fetch('http://100.100.46.98:6379', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    command: 'DEL',
-                    key: this.REQUEST_ID,
-                    db: 1
-                })
-            });
-
-            if (!response.ok) {
-                console.error('Erro ao limpar histórico do Redis');
-            }
-        } catch (error) {
-            console.error('Erro ao limpar histórico do Redis:', error);
-        }
     }
 
     showAudioOptions() {
@@ -398,7 +326,6 @@ class ChatApp {
 
                     // Adicionar no início para manter ordem mais atual primeiro
                     this.chatHistory.unshift(answerMessage, questionMessage);
-                    await this.saveHistoryToRedis();
                 }
                 
                 this.currentResponse = responseData;
@@ -649,9 +576,8 @@ class ChatApp {
         }
     }
 
-    async clearHistory() {
+    clearHistory() {
         this.chatHistory = [];
-        await this.clearHistoryFromRedis();
         this.updateHistoryDisplay();
         this.showToast('Histórico limpo!', 'success');
     }
