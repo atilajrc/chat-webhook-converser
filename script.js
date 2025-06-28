@@ -1,16 +1,19 @@
+
 class ChatApp {
     constructor() {
         this.REQUEST_ID = "n8n-webhook-chat-001";
         this.chatHistory = [];
         this.isLoading = false;
         this.currentResponse = '';
+        this.historyVisible = true;
         this.mediaRecorder = null;
         this.audioChunks = [];
-        this.recordedAudioBlob = null;
+        this.isRecording = false;
         
         this.initializeElements();
         this.attachEventListeners();
         this.focusMessageInput();
+        this.loadHistoryFromRedis();
     }
 
     initializeElements() {
@@ -23,7 +26,9 @@ class ChatApp {
         this.exportPdfBtn = document.getElementById('export-pdf-btn');
         this.copyResponseBtn = document.getElementById('copy-response-btn');
         this.clearResponseBtn = document.getElementById('clear-response-btn');
+        this.toggleHistoryBtn = document.getElementById('toggle-history-btn');
         this.clearHistoryBtn = document.getElementById('clear-history-btn');
+        this.historySidebar = document.querySelector('.history-sidebar');
         
         // File upload elements
         this.imageBtn = document.getElementById('image-btn');
@@ -32,17 +37,8 @@ class ChatApp {
         this.documentInput = document.getElementById('document-input');
         this.audioBtn = document.getElementById('audio-btn');
         this.audioInput = document.getElementById('audio-input');
-        
-        // Recording elements
         this.recordBtn = document.getElementById('record-btn');
-        this.recordingModal = document.getElementById('recording-modal');
-        this.closeModalBtn = document.getElementById('close-modal-btn');
-        this.startRecordingBtn = document.getElementById('start-recording-btn');
-        this.stopRecordingBtn = document.getElementById('stop-recording-btn');
-        this.playRecordingBtn = document.getElementById('play-recording-btn');
-        this.sendRecordingBtn = document.getElementById('send-recording-btn');
-        this.recordingStatus = document.getElementById('recording-status');
-        this.audioPlayback = document.getElementById('audio-playback');
+        this.stopRecordBtn = document.getElementById('stop-record-btn');
     }
 
     attachEventListeners() {
@@ -54,33 +50,238 @@ class ChatApp {
         // File upload events
         this.imageBtn.addEventListener('click', () => this.imageInput.click());
         this.documentBtn.addEventListener('click', () => this.documentInput.click());
-        this.audioBtn.addEventListener('click', () => this.audioInput.click());
+        this.audioBtn.addEventListener('click', () => this.showAudioOptions());
 
         this.imageInput.addEventListener('change', (e) => this.handleFileSelect(e, 'imageMessage'));
         this.documentInput.addEventListener('change', (e) => this.handleFileSelect(e, 'documentMessage'));
         this.audioInput.addEventListener('change', (e) => this.handleFileSelect(e, 'audioMessage'));
 
-        // Recording events
-        this.recordBtn.addEventListener('click', () => this.openRecordingModal());
-        this.closeModalBtn.addEventListener('click', () => this.closeRecordingModal());
-        this.startRecordingBtn.addEventListener('click', () => this.startRecording());
-        this.stopRecordingBtn.addEventListener('click', () => this.stopRecording());
-        this.playRecordingBtn.addEventListener('click', () => this.playRecording());
-        this.sendRecordingBtn.addEventListener('click', () => this.sendRecording());
+        // Audio recording events
+        this.recordBtn.addEventListener('click', () => this.startRecording());
+        this.stopRecordBtn.addEventListener('click', () => this.stopRecording());
+
+        // PDF export event
+        this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
 
         // Response action events
-        this.exportPdfBtn.addEventListener('click', () => this.exportToPDF());
         this.copyResponseBtn.addEventListener('click', () => this.copyResponse());
         this.clearResponseBtn.addEventListener('click', () => this.clearResponse());
 
         // History action events
+        this.toggleHistoryBtn.addEventListener('click', () => this.toggleHistory());
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
+    }
 
-        // Modal close on background click
-        this.recordingModal.addEventListener('click', (e) => {
-            if (e.target === this.recordingModal) {
-                this.closeRecordingModal();
+    async loadHistoryFromRedis() {
+        try {
+            const response = await fetch('http://100.100.46.98:6379', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'GET',
+                    key: this.REQUEST_ID,
+                    db: 1
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data && data.value) {
+                    this.chatHistory = JSON.parse(data.value).reverse(); // Mais atual para menos atual
+                    this.updateHistoryDisplay();
+                }
             }
+        } catch (error) {
+            console.error('Erro ao carregar histórico do Redis:', error);
+        }
+    }
+
+    async saveHistoryToRedis() {
+        try {
+            const response = await fetch('http://100.100.46.98:6379', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'SET',
+                    key: this.REQUEST_ID,
+                    value: JSON.stringify(this.chatHistory.slice().reverse()), // Salvar na ordem original
+                    db: 1
+                })
+            });
+
+            if (!response.ok) {
+                console.error('Erro ao salvar histórico no Redis');
+            }
+        } catch (error) {
+            console.error('Erro ao salvar histórico no Redis:', error);
+        }
+    }
+
+    async clearHistoryFromRedis() {
+        try {
+            const response = await fetch('http://100.100.46.98:6379', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    command: 'DEL',
+                    key: this.REQUEST_ID,
+                    db: 1
+                })
+            });
+
+            if (!response.ok) {
+                console.error('Erro ao limpar histórico do Redis');
+            }
+        } catch (error) {
+            console.error('Erro ao limpar histórico do Redis:', error);
+        }
+    }
+
+    showAudioOptions() {
+        const audioMenu = document.createElement('div');
+        audioMenu.className = 'audio-menu';
+        audioMenu.innerHTML = `
+            <div class="audio-menu-content">
+                <button id="record-option" class="audio-option-btn">
+                    <span class="icon">🎤</span>
+                    Gravar Áudio
+                </button>
+                <button id="upload-option" class="audio-option-btn">
+                    <span class="icon">📁</span>
+                    Enviar Arquivo
+                </button>
+                <button id="close-audio-menu" class="audio-option-btn close">
+                    <span class="icon">❌</span>
+                    Fechar
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(audioMenu);
+
+        document.getElementById('record-option').addEventListener('click', () => {
+            this.showAudioRecorder();
+            audioMenu.remove();
+        });
+
+        document.getElementById('upload-option').addEventListener('click', () => {
+            this.audioInput.click();
+            audioMenu.remove();
+        });
+
+        document.getElementById('close-audio-menu').addEventListener('click', () => {
+            audioMenu.remove();
+        });
+    }
+
+    showAudioRecorder() {
+        const recorderModal = document.createElement('div');
+        recorderModal.className = 'recorder-modal';
+        recorderModal.innerHTML = `
+            <div class="recorder-content">
+                <h3>Gravação de Áudio</h3>
+                <div class="recorder-controls">
+                    <button id="start-record" class="record-btn">
+                        <span class="icon">🎤</span>
+                        Iniciar Gravação
+                    </button>
+                    <button id="stop-record" class="record-btn" style="display: none;">
+                        <span class="icon">⏹️</span>
+                        Parar Gravação
+                    </button>
+                    <button id="send-record" class="record-btn" style="display: none;">
+                        <span class="icon">📤</span>
+                        Enviar Áudio
+                    </button>
+                </div>
+                <div class="recording-status" id="recording-status"></div>
+                <button id="close-recorder" class="close-recorder">Fechar</button>
+            </div>
+        `;
+
+        document.body.appendChild(recorderModal);
+
+        const startBtn = document.getElementById('start-record');
+        const stopBtn = document.getElementById('stop-record');
+        const sendBtn = document.getElementById('send-record');
+        const statusDiv = document.getElementById('recording-status');
+        const closeBtn = document.getElementById('close-recorder');
+
+        startBtn.addEventListener('click', () => this.startRecording(startBtn, stopBtn, sendBtn, statusDiv));
+        stopBtn.addEventListener('click', () => this.stopRecording(startBtn, stopBtn, sendBtn, statusDiv));
+        sendBtn.addEventListener('click', () => this.sendRecordedAudio(recorderModal));
+        closeBtn.addEventListener('click', () => recorderModal.remove());
+    }
+
+    async startRecording(startBtn, stopBtn, sendBtn, statusDiv) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.mediaRecorder = new MediaRecorder(stream);
+            this.audioChunks = [];
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                this.audioChunks.push(event.data);
+            };
+
+            this.mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                this.recordedAudio = audioBlob;
+                sendBtn.style.display = 'inline-block';
+                statusDiv.textContent = 'Gravação concluída. Clique em "Enviar Áudio" para enviar.';
+            };
+
+            this.mediaRecorder.start();
+            this.isRecording = true;
+
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            statusDiv.textContent = 'Gravando... Clique em "Parar Gravação" quando terminar.';
+        } catch (error) {
+            console.error('Erro ao iniciar gravação:', error);
+            statusDiv.textContent = 'Erro ao acessar o microfone. Verifique as permissões.';
+        }
+    }
+
+    stopRecording(startBtn, stopBtn, sendBtn, statusDiv) {
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            
+            stopBtn.style.display = 'none';
+            statusDiv.textContent = 'Processando gravação...';
+        }
+    }
+
+    async sendRecordedAudio(modal) {
+        if (this.recordedAudio) {
+            try {
+                const base64 = await this.convertBlobToBase64(this.recordedAudio);
+                const fileName = `audio_${Date.now()}.wav`;
+                await this.sendWebhookRequest(`Áudio gravado: ${fileName}`, 'audioMessage', fileName, base64);
+                modal.remove();
+            } catch (error) {
+                console.error('Erro ao enviar áudio gravado:', error);
+                this.showToast('Falha ao enviar áudio gravado', 'error');
+            }
+        }
+    }
+
+    convertBlobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onload = () => {
+                const result = reader.result;
+                const base64Content = result.split(',')[1];
+                resolve(base64Content);
+            };
+            reader.onerror = error => reject(error);
         });
     }
 
@@ -109,122 +310,19 @@ class ChatApp {
         }
     }
 
-    async handleFileSelect(event, messageType) {
+    async handleFileSelect(event, type) {
         const file = event.target.files?.[0];
         if (file) {
             try {
-                console.log(`Arquivo selecionado: ${file.name}, Tipo: ${messageType}`);
+                console.log(`Arquivo selecionado: ${file.name}, Tipo: ${type}`);
                 const base64 = await this.convertToBase64(file);
-                await this.sendWebhookRequest(`Arquivo enviado: ${file.name}`, messageType, file.name, base64);
+                await this.sendWebhookRequest(`Arquivo enviado: ${file.name}`, type, file.name, base64);
                 event.target.value = '';
             } catch (error) {
                 console.error('Erro ao converter arquivo para base64:', error);
                 this.showToast('Falha ao processar o arquivo', 'error');
             }
         }
-    }
-
-    // Recording methods
-    openRecordingModal() {
-        this.recordingModal.style.display = 'flex';
-        this.resetRecordingModal();
-    }
-
-    closeRecordingModal() {
-        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-            this.mediaRecorder.stop();
-        }
-        this.recordingModal.style.display = 'none';
-        this.resetRecordingModal();
-    }
-
-    resetRecordingModal() {
-        this.startRecordingBtn.style.display = 'flex';
-        this.stopRecordingBtn.style.display = 'none';
-        this.playRecordingBtn.style.display = 'none';
-        this.sendRecordingBtn.style.display = 'none';
-        this.audioPlayback.style.display = 'none';
-        this.recordingStatus.innerHTML = '<p>Clique em "Iniciar Gravação" para começar</p>';
-        this.recordedAudioBlob = null;
-        this.audioChunks = [];
-    }
-
-    async startRecording() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream);
-            
-            this.mediaRecorder.ondataavailable = (event) => {
-                this.audioChunks.push(event.data);
-            };
-
-            this.mediaRecorder.onstop = () => {
-                this.recordedAudioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-                const audioUrl = URL.createObjectURL(this.recordedAudioBlob);
-                this.audioPlayback.src = audioUrl;
-                this.audioPlayback.style.display = 'block';
-                this.playRecordingBtn.style.display = 'flex';
-                this.sendRecordingBtn.style.display = 'flex';
-                this.recordingStatus.innerHTML = '<p>Gravação concluída! Você pode reproduzir ou enviar o áudio.</p>';
-                
-                // Stop all tracks to release the microphone
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            this.mediaRecorder.start();
-            this.startRecordingBtn.style.display = 'none';
-            this.stopRecordingBtn.style.display = 'flex';
-            this.stopRecordingBtn.classList.add('recording');
-            this.recordingStatus.innerHTML = '<p>🔴 Gravando... Clique em "Parar Gravação" quando terminar.</p>';
-            
-            this.audioChunks = [];
-        } catch (error) {
-            console.error('Erro ao acessar o microfone:', error);
-            this.showToast('Erro ao acessar o microfone. Verifique as permissões.', 'error');
-        }
-    }
-
-    stopRecording() {
-        if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-            this.mediaRecorder.stop();
-            this.stopRecordingBtn.style.display = 'none';
-            this.stopRecordingBtn.classList.remove('recording');
-            this.startRecordingBtn.style.display = 'flex';
-        }
-    }
-
-    playRecording() {
-        if (this.audioPlayback.src) {
-            this.audioPlayback.play();
-        }
-    }
-
-    async sendRecording() {
-        if (!this.recordedAudioBlob) return;
-
-        try {
-            const base64 = await this.convertBlobToBase64(this.recordedAudioBlob);
-            const fileName = `audio_${new Date().getTime()}.wav`;
-            await this.sendWebhookRequest(`Áudio gravado: ${fileName}`, 'audioMessage', fileName, base64);
-            this.closeRecordingModal();
-            this.showToast('Áudio enviado com sucesso!', 'success');
-        } catch (error) {
-            console.error('Erro ao enviar áudio:', error);
-            this.showToast('Falha ao enviar o áudio', 'error');
-        }
-    }
-
-    convertBlobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onload = () => {
-                const result = reader.result;
-                const base64Content = result.split(',')[1];
-                resolve(base64Content);
-            };
-            reader.onerror = error => reject(error);
-        });
     }
 
     convertToBase64(file) {
@@ -298,7 +396,9 @@ class ChatApp {
                         formatted: true,
                     };
 
-                    this.chatHistory.unshift(answerMessage, questionMessage); // Mais recente primeiro
+                    // Adicionar no início para manter ordem mais atual primeiro
+                    this.chatHistory.unshift(answerMessage, questionMessage);
+                    await this.saveHistoryToRedis();
                 }
                 
                 this.currentResponse = responseData;
@@ -327,7 +427,6 @@ class ChatApp {
         this.imageBtn.disabled = loading;
         this.documentBtn.disabled = loading;
         this.audioBtn.disabled = loading;
-        this.recordBtn.disabled = loading;
         this.messageInput.disabled = loading;
         
         // Update button text
@@ -414,8 +513,8 @@ class ChatApp {
                     </div>
                     
                     ${message.messageType && isQuestion ? `
-                        <span class="message-type-badge ${this.getMessageTypeBadgeClass(message.messageType)}">
-                            ${this.getMessageTypeLabel(message.messageType)}
+                        <span class="message-type-badge ${message.messageType.toLowerCase()}">
+                            ${this.getMessageTypeDisplay(message.messageType)}
                         </span>
                     ` : ''}
                     
@@ -441,27 +540,17 @@ class ChatApp {
         this.historyContent.innerHTML = html;
     }
 
-    getMessageTypeLabel(messageType) {
-        const labels = {
+    getMessageTypeDisplay(messageType) {
+        const typeMap = {
             'conversation': 'Texto',
             'imageMessage': 'Imagem',
             'audioMessage': 'Áudio',
             'documentMessage': 'Documento'
         };
-        return labels[messageType] || messageType;
+        return typeMap[messageType] || messageType;
     }
 
-    getMessageTypeBadgeClass(messageType) {
-        const classes = {
-            'conversation': 'texto',
-            'imageMessage': 'imagem',
-            'audioMessage': 'audio',
-            'documentMessage': 'documento'
-        };
-        return classes[messageType] || 'texto';
-    }
-
-    handleCopyMessage(messageId) {
+    async handleCopyMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message) {
             try {
@@ -477,7 +566,7 @@ class ChatApp {
     handleResendMessage(messageId) {
         const message = this.chatHistory.find(m => m.id === messageId);
         if (message && message.type === 'question') {
-            this.sendWebhookRequest(message.content, message.messageType || "Texto", null, null, true);
+            this.sendWebhookRequest(message.content, message.messageType || "conversation", null, null, true);
         }
     }
 
@@ -548,8 +637,21 @@ class ChatApp {
         this.showToast('Resposta limpa!', 'success');
     }
 
-    clearHistory() {
+    toggleHistory() {
+        this.historyVisible = !this.historyVisible;
+        
+        if (this.historyVisible) {
+            this.historySidebar.style.display = 'flex';
+            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Ocultar';
+        } else {
+            this.historySidebar.style.display = 'none';
+            this.toggleHistoryBtn.innerHTML = '<span class="icon">👁️</span> Mostrar';
+        }
+    }
+
+    async clearHistory() {
         this.chatHistory = [];
+        await this.clearHistoryFromRedis();
         this.updateHistoryDisplay();
         this.showToast('Histórico limpo!', 'success');
     }

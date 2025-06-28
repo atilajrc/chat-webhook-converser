@@ -60,39 +60,25 @@
                 <div class="input-area">
                     <!-- Área de texto com botões de upload ao lado -->
                     <div class="text-input-container">
-                        <div class="message-input-wrapper">
-                            <textarea id="message-input" placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"></textarea>
-                        </div>
-                        
-                        <!-- Upload de arquivos ao lado do input -->
-                        <div class="file-upload-sidebar">
-                            <button class="upload-btn" id="image-btn">
+                        <textarea id="message-input" placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"></textarea>
+                        <div class="upload-buttons-inline">
+                            <button class="upload-btn-inline" id="image-btn" title="Enviar Imagem">
                                 <span class="icon">🖼️</span>
-                                <span>Imagem</span>
                             </button>
                             <input type="file" id="image-input" accept="image/*" style="display: none;">
 
-                            <button class="upload-btn" id="document-btn">
+                            <button class="upload-btn-inline" id="document-btn" title="Enviar Documento">
                                 <span class="icon">📄</span>
-                                <span>Documento</span>
                             </button>
                             <input type="file" id="document-input" accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx" style="display: none;">
 
-                            <button class="upload-btn" id="audio-btn">
+                            <button class="upload-btn-inline" id="audio-btn" title="Áudio">
                                 <span class="icon">🎵</span>
-                                <span>Áudio</span>
                             </button>
                             <input type="file" id="audio-input" accept="audio/*" style="display: none;">
-                            
-                            <!-- Botão de gravação -->
-                            <button class="record-btn" id="record-btn">
-                                <span class="icon">🎤</span>
-                                <span>Gravar</span>
-                            </button>
                         </div>
                     </div>
 
-                    <!-- Botões de ação -->
                     <div class="button-row">
                         <button id="send-btn" class="primary-btn">
                             <span class="icon">📤</span>
@@ -112,6 +98,10 @@
                     <span class="icon">📋</span>
                     <h3>Histórico</h3>
                     <div class="history-controls">
+                        <button id="toggle-history-btn" class="history-control-btn">
+                            <span class="icon">👁️</span>
+                            Ocultar
+                        </button>
                         <button id="clear-history-btn" class="history-control-btn">
                             <span class="icon">🗑️</span>
                             Limpar
@@ -124,40 +114,6 @@
                         <small>Suas conversas aparecerão aqui</small>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de gravação -->
-    <div id="recording-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Gravação de Áudio</h3>
-                <button id="close-modal-btn" class="close-btn">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="recording-controls">
-                    <button id="start-recording-btn" class="record-control-btn">
-                        <span class="icon">🔴</span>
-                        Iniciar Gravação
-                    </button>
-                    <button id="stop-recording-btn" class="record-control-btn" style="display: none;">
-                        <span class="icon">⏹️</span>
-                        Parar Gravação
-                    </button>
-                    <button id="play-recording-btn" class="record-control-btn" style="display: none;">
-                        <span class="icon">▶️</span>
-                        Reproduzir
-                    </button>
-                    <button id="send-recording-btn" class="record-control-btn primary" style="display: none;">
-                        <span class="icon">📤</span>
-                        Enviar Áudio
-                    </button>
-                </div>
-                <div class="recording-status" id="recording-status">
-                    <p>Clique em "Iniciar Gravação" para começar</p>
-                </div>
-                <audio id="audio-playback" controls style="display: none; width: 100%; margin-top: 1rem;"></audio>
             </div>
         </div>
     </div>
