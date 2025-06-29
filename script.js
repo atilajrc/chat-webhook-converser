@@ -44,6 +44,9 @@ class ChatApp {
         this.sendBtn.addEventListener('click', () => this.handleSendText());
         this.clearBtn.addEventListener('click', () => this.handleClearText());
         this.messageInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        
+        // Add input event listener to update button state
+        this.messageInput.addEventListener('input', () => this.updateSendButtonState());
 
         // File upload events
         this.imageBtn.addEventListener('click', () => this.imageInput.click());
@@ -66,6 +69,17 @@ class ChatApp {
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
     }
 
+    updateSendButtonState() {
+        const hasText = this.messageInput.value.trim().length > 0;
+        this.sendBtn.disabled = !hasText || this.isLoading;
+        
+        if (this.isLoading) {
+            this.sendBtn.innerHTML = '<span class="icon">⏳</span> Enviando...';
+        } else {
+            this.sendBtn.innerHTML = '<span class="icon">📤</span> Enviar';
+        }
+    }
+
     focusMessageInput() {
         this.messageInput.focus();
     }
@@ -76,11 +90,13 @@ class ChatApp {
 
         await this.sendWebhookRequest(message, "conversation");
         this.messageInput.value = '';
+        this.updateSendButtonState(); // Update button state after clearing
         this.focusMessageInput();
     }
 
     handleClearText() {
         this.messageInput.value = '';
+        this.updateSendButtonState(); // Update button state after clearing
         this.focusMessageInput();
     }
 
@@ -281,19 +297,14 @@ class ChatApp {
 
     setLoading(loading) {
         this.isLoading = loading;
+        this.updateSendButtonState(); // Use the new method instead of inline logic
         
-        // Update UI elements
-        this.sendBtn.disabled = loading || !this.messageInput.value.trim();
+        // Update other UI elements
         this.clearBtn.disabled = loading;
         this.imageBtn.disabled = loading;
         this.documentBtn.disabled = loading;
         this.audioBtn.disabled = loading && !this.isRecording;
         this.messageInput.disabled = loading;
-        
-        // Update button text
-        this.sendBtn.innerHTML = loading ? 
-            '<span class="icon">⏳</span> Enviando...' : 
-            '<span class="icon">📤</span> Enviar';
     }
 
     updateResponseDisplay() {
