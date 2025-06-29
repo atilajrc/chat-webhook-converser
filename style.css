@@ -160,11 +160,24 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.file-upload-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.25rem;
-    margin-bottom: 0.375rem;
+.input-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+}
+
+.file-upload-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 80px;
+}
+
+.text-input-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .upload-btn {
@@ -172,12 +185,13 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 0.125rem;
-    padding: 0.375rem;
+    padding: 0.5rem 0.375rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     background: white;
     cursor: pointer;
     transition: all 0.2s;
+    min-height: 60px;
 }
 
 .upload-btn:hover {
@@ -191,28 +205,24 @@ body {
 }
 
 .upload-btn .icon {
-    font-size: 0.875rem;
+    font-size: 1rem;
 }
 
 .upload-btn span:last-child {
-    font-size: 0.6rem;
-}
-
-.text-input-area {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    font-size: 0.65rem;
+    text-align: center;
 }
 
 #message-input {
     width: 100%;
-    min-height: 60px;
-    padding: 0.5rem;
+    min-height: 120px;
+    padding: 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     resize: none;
     font-family: inherit;
     font-size: 0.875rem;
+    line-height: 1.4;
 }
 
 #message-input:focus {
@@ -551,12 +561,18 @@ body {
         gap: 0.5rem;
     }
     
-    .file-upload-grid {
-        grid-template-columns: 1fr;
+    .input-row {
+        flex-direction: column;
     }
     
-    .button-row {
-        flex-direction: column;
+    .file-upload-column {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+    
+    .upload-btn {
+        min-height: 50px;
+        flex: 1;
     }
 }
 
