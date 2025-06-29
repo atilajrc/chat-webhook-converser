@@ -58,10 +58,9 @@
 
                 <!-- Área de entrada -->
                 <div class="input-area">
-                    <!-- Upload de arquivos e área de texto reorganizada -->
-                    <div class="input-row">
-                        <!-- Upload de arquivos -->
-                        <div class="file-upload-column">
+                    <div class="input-layout">
+                        <!-- Coluna dos botões de upload -->
+                        <div class="upload-buttons-column">
                             <button class="upload-btn" id="image-btn">
                                 <span class="icon">🖼️</span>
                                 <span>Imagem</span>
@@ -81,10 +80,10 @@
                             <input type="file" id="audio-input" accept="audio/*" style="display: none;">
                         </div>
 
-                        <!-- Área de texto expandida -->
-                        <div class="text-input-column">
+                        <!-- Coluna principal com textarea e botões -->
+                        <div class="main-input-column">
                             <textarea id="message-input" placeholder="Digite sua mensagem... (Enter para enviar, Shift+Enter para nova linha)"></textarea>
-                            <div class="button-row">
+                            <div class="action-buttons">
                                 <button id="send-btn" class="primary-btn">
                                     <span class="icon">📤</span>
                                     Enviar

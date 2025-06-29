@@ -160,20 +160,20 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.input-row {
+.input-layout {
     display: flex;
     gap: 0.75rem;
     align-items: stretch;
 }
 
-.file-upload-column {
+.upload-buttons-column {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     min-width: 80px;
 }
 
-.text-input-column {
+.main-input-column {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -215,7 +215,7 @@ body {
 
 #message-input {
     width: 100%;
-    min-height: 120px;
+    min-height: 140px;
     padding: 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.375rem;
@@ -229,6 +229,11 @@ body {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
 }
 
 .button-row {
@@ -561,11 +566,11 @@ body {
         gap: 0.5rem;
     }
     
-    .input-row {
+    .input-layout {
         flex-direction: column;
     }
     
-    .file-upload-column {
+    .upload-buttons-column {
         flex-direction: row;
         justify-content: space-around;
     }
@@ -573,6 +578,10 @@ body {
     .upload-btn {
         min-height: 50px;
         flex: 1;
+    }
+    
+    #message-input {
+        min-height: 100px;
     }
 }
 
